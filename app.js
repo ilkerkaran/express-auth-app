@@ -1,60 +1,66 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const passport = require('passport');
+const redisClient = require('redis').createClient();
+const RedisStore = require('connect-redis')(session);
+const { ensureLoggedIn } = require('connect-ensure-login');
+const strategy = require('./auth/strategy');
+const auth = require('./auth/index');
+const { signToken } = require('./auth/utils');
 // const jwtStrategy = require('passport-jwt').Strategy;
 // const extractJwt = require('passport-jwt').ExtractJwt;
-const LocalStrategy = require('passport-local').Strategy;
-const jwt = require('jsonwebtoken');
-const config = require('./config');
-const userService = require('./userService');
 
 const app = express();
 // Middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  session({
+    secret: 'this is secret!',
+    resave: false,
+    saveUninitialized: false,
+    store: new RedisStore({
+      host: 'localhost',
+      port: 6379,
+      client: redisClient,
+      ttl: 86400
+    }),
+    cookie: {
+      secure: false,
+      maxAge: 60 * 60 * 1000,
+      httpOnly: true
+    }
+  })
+);
 
 app.use(passport.initialize());
-
-const localStrategy = new LocalStrategy(
-  {
-    usernameField: 'username',
-    passwordField: 'password'
-  },
-  (username, password, done) => {
-    try {
-      console.log('userService');
-      const user = userService.findUser(username, password);
-      if (!user) return done(null, false, { message: 'Error!' });
-      delete user.password;
-      console.log('user', user);
-      return done(null, user, { message: 'Success!' });
-    } catch (err) {
-      return done(err);
-    }
-  }
-);
-passport.use('login', localStrategy); // Authenticate
+app.use(passport.session());
+console.log('auth', auth);
+auth.initialiseAuthentication(app);
 
 // Routes
-app.post('/login', (req, res, next) => {
-  console.log('login hit');
-  passport.authenticate('login', async (err, user, message) => {
-    try {
-      console.log(message);
-      console.log('user', user);
-      if (err) next(err);
-      const body = { _id: user.id, username: user.username };
-      console.log('body', body);
-      const token = jwt.sign(
-        { user: body, exp: Math.floor(Date.now() / 1000) + 60 * 60 },
-        'very_secret_key'
-      );
-      return res.json({ token });
-    } catch (error) {
-      return next(error);
-    }
-  })(req, res, next);
+console.log('base', process.env.BASE_URL);
+
+app.get(
+  '/login',
+  passport.authenticate('google', {
+    successRedirect: '/loggedin',
+    failureRedirect: '/login',
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email'
+    ]
+  })
+);
+
+app.get('/loggedin', passport.authenticate('google'), (req, res) => {
+  res.redirect('/');
 });
+
+app.get('/', ensureLoggedIn(), (req, res) =>
+  res.send({ message: 'You are loggedin!' })
+);
 
 app.post(
   '/profile',
@@ -72,6 +78,6 @@ app.use('', (req, res) => {
 });
 // Server start
 app.listen(
-  config.PORT,
-  console.log(`Server Started, listening ${config.PORT}`)
+  process.env.PORT,
+  console.log(`Server Started, listening ${process.env.PORT}`)
 );
