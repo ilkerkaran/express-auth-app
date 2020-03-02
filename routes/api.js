@@ -1,16 +1,23 @@
-const ensureLoggedIn = require('connect-ensure-login');
+const { ensureLoggedIn } = require('connect-ensure-login');
 const express = require('express');
+const passport = require('passport');
 
+const currentAuthType = process.env.AUTH_TYPE;
 const router = express.Router();
 
-// Home page route.
-router.get('/', (req, res) => {
-  res.send('Welcome to API');
+router.get('/login', (req, res) => res.redirect(`${currentAuthType}/login`));
+
+router.get('/loggedin', passport.authenticate(currentAuthType), (req, res) => {
+  res.redirect('/');
 });
 
-// About page route.
-router.get('/profile', ensureLoggedIn('/auth/login'), (req, res) => {
-  res.send('About this wiki');
+router.get('/', ensureLoggedIn(), (req, res) => res.send({ message: 'You are loggedin!' }));
+
+router.use('/hello', (req, res) => {
+  res.send({ data: 'Hello World!' });
+});
+router.use('', (req, res) => {
+  res.status(404).send('Sorry, cant find that');
 });
 
 module.exports = router;
