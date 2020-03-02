@@ -18,8 +18,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new RedisStore({
-      host: 'localhost',
-      port: 6379,
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
       client: redisClient,
       ttl: 86400
     }),
@@ -42,5 +42,6 @@ app.use('/', routes);
 // Server start
 app.listen(
   process.env.PORT,
+  // eslint-disable-next-line no-console
   console.log(`Server Started, listening ${process.env.PORT}`)
 );
