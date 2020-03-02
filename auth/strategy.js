@@ -20,19 +20,18 @@ const localStrategy = new LocalStrategy(
     }
   }
 );
-const googleOAuthStrategy = () =>
-  new OAuth2Strategy(
-    {
-      authorizationURL: process.env.AUTH_GOOGLE_AUTH_URL,
-      tokenURL: process.env.AUTH_GOOGLE_TOKEN_URL,
-      clientID: process.env.AUTH_GOOGLE_CLIENT_ID,
-      clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.AUTH_GOOGLE_CALLBACK
-    },
-    (accessToken, refreshToken, profile, done) => {
-      done(null, profile);
-    }
-  );
+const googleOAuthStrategy = () => new OAuth2Strategy(
+  {
+    authorizationURL: process.env.AUTH_GOOGLE_AUTH_URL,
+    tokenURL: process.env.AUTH_GOOGLE_TOKEN_URL,
+    clientID: process.env.AUTH_GOOGLE_CLIENT_ID,
+    clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.AUTH_GOOGLE_CALLBACK
+  },
+  (accessToken, refreshToken, profile, done) => {
+    done(null, profile);
+  }
+);
 
 const amazonCognitoOAuthStrategy = new OAuth2Strategy(
   {

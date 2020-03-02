@@ -18,6 +18,18 @@ const strategy = app => {
   passport.use('google', new OAuth2Strategy(strategyOptions, verifyCallback));
 
   app.get(
+    '/google/login',
+    passport.authenticate('google', {
+      successRedirect: '/loggedin',
+      failureRedirect: '/login',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ]
+    }, (req, res) => res.send({ message: 'ffs' }))
+  );
+
+  app.get(
     '/auth/google',
     passport.authenticate('google', {
       scope: [
@@ -30,14 +42,12 @@ const strategy = app => {
   app.get(
     '/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login' }),
-    (req, res) => {
-      return res
-        .status(200)
-        .cookie('jwt', signToken(req.user), {
-          httpOnly: true
-        })
-        .redirect('/');
-    }
+    (req, res) => res
+      .status(200)
+      .cookie('jwt', signToken(req.user), {
+        httpOnly: true
+      })
+      .redirect('/')
   );
 
   return app;

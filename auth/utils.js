@@ -7,8 +7,7 @@ const setup = () => {
   passport.deserializeUser((obj, done) => done(null, obj));
 };
 
-const signToken = user =>
-  jwt.sign({ data: user }, process.env.JWT_SECRET, { expiresIn: 604800 });
+const signToken = user => jwt.sign({ data: user }, process.env.JWT_SECRET, { expiresIn: 604800 });
 
 const hashPassword = async password => {
   if (!password) {
@@ -19,8 +18,8 @@ const hashPassword = async password => {
   return bcrypt.hash(password, salt);
 };
 
-const verifyPassword = async (candidate, actual) => {
-  return bcrypt.compare(candidate, actual);
-};
+const verifyPassword = async (candidate, actual) => bcrypt.compare(candidate, actual);
 
-module.exports = { setup, signToken, hashPassword, verifyPassword };
+module.exports = {
+  setup, signToken, hashPassword, verifyPassword
+};
